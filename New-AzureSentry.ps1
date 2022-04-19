@@ -7,12 +7,17 @@ param(
 	[Parameter(Mandatory=$false,Position=5)][string]$vhdBlobName = "mobileiron-sentry.vhd",
 	[Parameter(Mandatory=$false,Position=6)][string]$vhdUri = "https://mobileironsentry.blob.core.windows.net/mobileironsentrycontainer/sentry-mobileiron-9.12.0-16.vhd",
 	[Parameter(Mandatory=$false,Position=7)][string]$deploymentTemplateUri = "https://mobileironsentry.blob.core.windows.net/mobileironsentrycontainer/SentryAzureDeploy-9.12.0-16.json",
-	[Parameter(Mandatory=$false,Position=8)][string]$deploymentParametersUri = "https://mobileironsentry.blob.core.windows.net/mobileironsentrycontainer/SentryAzureDeploy.parameters-9.12.0-16.json"
+	[Parameter(Mandatory=$false,Position=8)][string]$deploymentParametersUri = "https://mobileironsentry.blob.core.windows.net/mobileironsentrycontainer/SentryAzureDeploy.parameters-9.12.0-16.json",
+	[Parameter(Mandatory=$false,Position=9)][string]$subscription,
+	[Parameter(Mandatory=$false,Position=10)][string]$tags = ""
 )
-az group create -n $resourceGroupName -l $azureLocation
-az storage account create --resource-group $resourceGroupName --location $azureLocation --sku Standard_LRS --kind Storage --name $storageAccountName
+if ($subscription) {
+    az account set --subscription $subscription
+}
+az group create -n $resourceGroupName -l $azureLocation --tags $tags
+az storage account create --resource-group $resourceGroupName --location $azureLocation --sku Standard_LRS --kind Storage --name $storageAccountName --tags $tags
 az storage container create -n $storageContainerName --account-name $storageAccountName
-az storage blob copy start --account-name $storageAccountName --destination-blob $vhdBlobName --destination-container $storageContainerName -u $vhdUri
+az storage blob copy start --account-name $storageAccountName --destination-blob $vhdBlobName --destination-container $storageContainerName -u $vhdUri --tags $tags
 do {
     Start-Sleep -Seconds 10
     $blobCopyInfo = az storage blob show -c $storageContainerName -n $vhdBlobName --account-name $storageAccountName | ConvertFrom-Json
